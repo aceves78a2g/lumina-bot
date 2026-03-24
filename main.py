@@ -4,7 +4,7 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 import os
 from gtts import gTTS
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+TOKEN = "8690678791:AAHn5tfW1q6S3ORPZhO4GwakhpvXjnXKF6o"
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.lower()
