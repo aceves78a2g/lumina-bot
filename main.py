@@ -1,28 +1,33 @@
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-TOKEN = "8690678791:AAHn5tfW1q6S3ORPZhO4GwakhpvXjnXKF6o"
+import os
+from gtts import gTTS
+
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.lower()
 
     if "lumina" in texto:
-        await update.message.reply_text("Te escucho… sueltalo sin filtro.")
-        return
+        respuesta = "Te escucho... sueltalo sin filtro."
+    elif "piensa como" in texto:
+        respuesta = "Ok... si lo ves desde otra perspectiva... ¿que ya sabes que estas evitando ver?"
+    else:
+        respuesta = f"A ver... te escucho diciendo: {texto}. No te me aceleres... ¿que parte de eso es la que mas te pesa?"
 
-    if "piensa como" in texto:
-        await update.message.reply_text(
-            "Ok… si lo ves desde otra perspectiva… ¿que ya sabes que estas evitando ver?"
-        )
-        return
+    # 🔥 convertir a voz
+    tts = gTTS(respuesta, lang='es')
+    tts.save("voz.ogg")
 
-    await update.message.reply_text(
-        f"A ver… te escucho diciendo:\n\n{texto}\n\nNo te me aceleres… ¿que parte de eso es la que mas te pesa?"
-    )
+    # 🔥 enviar audio
+    with open("voz.ogg", "rb") as audio:
+        await update.message.reply_voice(audio)
 
-app = Application.builder().token(TOKEN).build()
+app = ApplicationBuilder().token(TOKEN).build()
 
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
+app.add_handler(MessageHandler(filters.TEXT, responder))
 
-print("🔥 Lumina esta viva...")
+print("Lumina con voz activa...")
+
 app.run_polling()
