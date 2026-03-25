@@ -1,33 +1,48 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
-
 import os
-from gtts import gTTS
+from telegram import Update
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
+import requests
 
-TOKEN = "8690678791:AAHn5tfW1q6S3ORPZhO4GwakhpvXjnXKF6o"
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+def preguntar_gemini(texto):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": f"""
+Eres Lumina.
+No das consejos directos.
+Calmas, ordenas pensamientos y haces reflexionar.
+
+Usuario dijo: {texto}
+"""}
+                ]
+            }
+        ]
+    }
+
+    response = requests.post(url, json=data)
+    resultado = response.json()
+
+    try:
+        return resultado["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        return "A ver… vamos despacio… cuéntamelo otra vez."
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text.lower()
+    texto = update.message.text
 
-    if "lumina" in texto:
-        respuesta = "Te escucho... sueltalo sin filtro."
-    elif "piensa como" in texto:
-        respuesta = "Ok... si lo ves desde otra perspectiva... ¿que ya sabes que estas evitando ver?"
-    else:
-        respuesta = f"A ver... te escucho diciendo: {texto}. No te me aceleres... ¿que parte de eso es la que mas te pesa?"
+    respuesta = preguntar_gemini(texto)
 
-    # 🔥 convertir a voz
-    tts = gTTS(respuesta, lang='es')
-    tts.save("voz.ogg")
+    await update.message.reply_text(respuesta)
 
-    # 🔥 enviar audio
-    with open("voz.ogg", "rb") as audio:
-        await update.message.reply_voice(audio)
+app = Application.builder().token(TOKEN).build()
 
-app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
 
-app.add_handler(MessageHandler(filters.TEXT, responder))
-
-print("Lumina con voz activa...")
-
+print("Lumina inteligente activa...")
 app.run_polling()
