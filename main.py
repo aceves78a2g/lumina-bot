@@ -1,48 +1,40 @@
-import os
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
-import requests
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+import os
+import random
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-def preguntar_gemini(texto):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
-
-    data = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": f"""
-Eres Lumina.
-No das consejos directos.
-Calmas, ordenas pensamientos y haces reflexionar.
-
-Usuario dijo: {texto}
-"""}
-                ]
-            }
-        ]
-    }
-
-    response = requests.post(url, json=data)
-    resultado = response.json()
-
-    try:
-        return resultado["candidates"][0]["content"]["parts"][0]["text"]
-    except:
-        return "A ver… vamos despacio… cuéntamelo otra vez."
+respuestas_generales = [
+    "A ver... vamos despacio... ¿que es lo que realmente te esta moviendo?",
+    "Respira tantito... cuentamelo bien desde el principio...",
+    "Eso que dijiste... ya te escuchaste?",
+    "No te aceleres... ¿que parte de eso es la que mas te pesa?",
+    "A ver... bajale tantito... ¿que esta pasando en realidad?"
+]
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text
+    texto = update.message.text.lower()
 
-    respuesta = preguntar_gemini(texto)
+    if "lumina" in texto:
+        respuesta = "Te escucho... sueltalo sin filtro."
+
+    elif "piensa como" in texto:
+        respuesta = "Ok... si lo ves desde otra perspectiva... ¿que ya sabes que estas evitando ver?"
+
+    elif "confundido" in texto:
+        respuesta = "Cuando te sientes confundido normalmente es porque hay varias opciones... ¿ya las pusiste en orden?"
+
+    elif "ayuda" in texto:
+        respuesta = "Claro que te ayudo... pero primero bajale tantito... dime exactamente que esta pasando"
+
+    else:
+        respuesta = random.choice(respuestas_generales)
 
     await update.message.reply_text(respuesta)
 
-app = Application.builder().token(TOKEN).build()
+app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(MessageHandler(filters.TEXT, responder))
 
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
-
-print("Lumina inteligente activa...")
+print("Lumina funcionando inteligente...")
 app.run_polling()
